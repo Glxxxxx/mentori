@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mentori</title>
+    <!-- Inclui o Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f0f5;
+        }
+        .container {
+            max-width: 1000px;
+        }
+        .text-purple { color: #800080; }
+        .bg-purple { background-color: #800080; }
+        .text-turquoise { color: #40e0d0; }
+        .bg-turquoise { background-color: #40e0d0; }
+        .text-dark-gray { color: #333; }
+        .bg-dark-gray { background-color: #333; }
+        .hover-scale:hover { transform: scale(1.05); }
+        .back-button {
+            top: 20px;
+            left: 20px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 12px;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+        }
+        .chat-container {
+            height: calc(100vh - 200px);
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .chat-message {
+            max-width: 80%;
+            padding: 0.75rem;
+            border-radius: 1rem;
+        }
+        .message-user {
+            background-color: #e2e8f0;
+            align-self: flex-end;
+            border-bottom-right-radius: 0.25rem;
+        }
+        .message-bot {
+            background-color: #800080;
+            color: white;
+            align-self: flex-start;
+            border-bottom-left-radius: 0.25rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Container Principal da Aplicação -->
+    <div id="app-container" class="min-h-screen flex flex-col items-center p-4">
+
+        <!-- Botão Voltar (Visível em todas as telas, exceto a inicial) -->
+        <button id="back-button" class="absolute top-4 left-4 p-2 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 transition duration-300 ease-in-out hidden" onclick="goBack()">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+        </button>
+
+        <!-- Menu Lateral -->
+        <div id="side-menu" class="fixed inset-y-0 right-0 w-64 bg-white shadow-lg p-6 transform translate-x-full transition-transform z-50">
+            <button id="close-menu" class="absolute top-4 right-4 p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <nav class="mt-8">
+                <ul>
+                    <li class="mb-4">
+                        <button class="flex items-center space-x-2 text-dark-gray hover:text-purple transition duration-300" onclick="showScreen('chat')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                            </svg>
+                            <span>Chat</span>
+                        </button>
+                    </li>
+                    <li class="mb-4">
+                        <button class="flex items-center space-x-2 text-dark-gray hover:text-purple transition duration-300" onclick="showScreen('email')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-2 1a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2v-7a2 2 0 012-2h14z" />
+                            </svg>
+                            <span>E-mail para contato</span>
+                        </button>
+                    </li>
+                    <li class="mb-4">
+                        <button class="flex items-center space-x-2 text-dark-gray hover:text-purple transition duration-300" onclick="showScreen('change-plan')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Trocar de plano</span>
+                        </button>
+                    </li>
+                    <li class="mb-4">
+                        <button class="flex items-center space-x-2 text-dark-gray hover:text-purple transition duration-300" onclick="showScreen('finance')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 01-2 2h-1a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2v-6a2 2 0 012-2h1a2 2 0 012 2v6a2 2 0 002 2h2a2 2 0 002-2v-6a2 2 0 00-2-2h-1a2 2 0 01-2-2z" />
+                            </svg>
+                            <span>Financeiro</span>
+                        </button>
+                    </li>
+                    <li class="mb-4">
+                        <button class="flex items-center space-x-2 text-dark-gray hover:text-purple transition duration-300" onclick="showScreen('schedule-training')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span>Agendar treinamento</span>
+                        </button>
+                    </li>
+                    <li class="mb-4">
+                        <button class="flex items-center space-x-2 text-dark-gray hover:text-purple transition duration-300" onclick="showScreen('privacy-policy')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                            </svg>
+                            <span>Política de privacidade</span>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        
+        <!-- Menu Hamburger (para abrir o menu lateral) -->
+        <button id="menu-button" class="fixed top-4 right-4 p-2 rounded-full bg-white shadow-lg z-50 transition-all duration-300 ease-in-out" onclick="toggleMenu()">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-dark-gray" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+            </svg>
+        </button>
+
+        <!-- Container de Telas -->
+        <div id="screen-container" class="w-full flex justify-center pt-16">
+
+            <!-- Tela Inicial -->
+            <div id="home" class="screen w-full container mx-auto px-4 md:px-8 text-center transition-all duration-500 ease-in-out">
+                <div class="my-12">
+                    <img src="https://placehold.co/150x150/800080/FFFFFF/png?text=Mentori" alt="Logo Mentori" class="mx-auto rounded-full mb-6 shadow-md">
+                    <h1 class="text-4xl md:text-5xl font-extrabold text-dark-gray mb-4">Bem-vindo à Mentori</h1>
+                    <p class="text-lg md:text-xl text-gray-500">Transformando o capital humano.</p>
+                </div>
+                <div class="space-y-6 md:space-y-0 md:space-x-8 md:flex justify-center mb-12">
+                    <button class="w-full md:w-auto px-8 py-4 bg-purple text-white text-lg font-bold rounded-full shadow-lg hover-scale transition-transform" onclick="showScreen('gestor-login')">Acesso Gestor</button>
+                    <button class="w-full md:w-auto px-8 py-4 bg-turquoise text-white text-lg font-bold rounded-full shadow-lg hover-scale transition-transform" onclick="showScreen('collaborator')">Acesso Colaborador</button>
+                </div>
+                <button class="text-gray-500 hover:text-purple transition duration-300" onclick="showScreen('about-us')">Sobre Nós</button>
+            </div>
+
+            <!-- Tela Sobre Nós -->
+            <div id="about-us" class="screen hidden w-full container mx-auto px-4 md:px-8 transition-all duration-500 ease-in-out">
+                <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl my-8">
+                    <h2 class="text-3xl font-bold text-dark-gray mb-6">Sobre Nós</h2>
+                    <div class="space-y-6 text-lg text-gray-600">
+                        <div>
+                            <h3 class="text-2xl font-semibold text-dark-gray mb-2">Visão</h3>
+                            <p>Ser a plataforma líder em desenvolvimento de capital humano, capacitando empresas a construir equipes fortes e resilientes.</p>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-semibold text-dark-gray mb-2">Missão</h3>
+                            <p>Fornecer soluções inovadoras e personalizadas para que empresas e colaboradores alcancem seu potencial máximo através de um ciclo contínuo de análise e melhoria.</p>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-semibold text-dark-gray mb-2">Valores</h3>
+                            <ul class="list-disc list-inside space-y-2">
+                                <li>Integridade e transparência em todas as ações.</li>
+                                <li>Inovação contínua para oferecer as melhores ferramentas.</li>
+                                <li>Respeito e empatia em todas as interações.</li>
+                                <li>Foco no crescimento e no sucesso mútuo.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tela Acesso Colaborador -->
+            <div id="collaborator" class="screen hidden w-full container mx-auto px-4 md:px-8 transition-all duration-500 ease-in-out">
+                <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl my-8 text-center">
+                    <h2 class="text-3xl font-bold text-dark-gray mb-6">Acesso Colaborador</h2>
+                    <p class="text-lg text-gray-600 mb-8">
+                        Este questionário foi elaborado para identificar pontos de melhoria e fortalecer o capital humano da sua equipe. Suas respostas são anônimas e essenciais para a evolução da empresa.
+                    </p>
+                    <button class="px-8 py-4 bg-turquoise text-white text-lg font-bold rounded-full shadow-lg hover-scale transition-transform" onclick="startSurvey()">Vamos começar?</button>
+                </div>
+            </div>
+
+            <!-- Tela Questionário -->
+            <div id="survey" class="screen hidden w-full container mx-auto px-4 md:px-8 transition-all duration-500 ease-in-out">
+                <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl my-8">
+                    <h2 class="text-3xl font-bold text-dark-gray mb-6 text-center">Questionário</h2>
+                    <form id="survey-form">
+                        <div class="space-y-6">
+                            <!-- Pergunta 1: Setor -->
+                            <div class="border-b pb-4">
+                                <label for="sector" class="block text-lg font-semibold text-dark-gray mb-2">Por favor, informe o seu setor:</label>
+                                <input type="text" id="sector" name="sector" class="w-full px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-turquoise" required>
+                            </div>
+                            <!-- Pergunta 2 -->
+                            <div class="border-b pb-4">
+                                <p class="text-lg font-semibold text-dark-gray mb-4">1. Eu me sinto valorizado(a) por minha gestão e equipe.</p>
+                                <div class="flex flex-col md:flex-row justify-between text-center space-y-2 md:space-y-0">
+                                    <label class="flex flex-col items-center">
+                                        <input type="radio" name="q1" value="1" class="form-radio text-purple h-5 w-5" required>
+                                        <span class="mt-1 text-sm text-gray-600">1 - Discordo Totalmente</span>
+                                    </label>
+                                    <label class="flex flex-col items-center">
+                                        <input type="radio" name="q1" value="2" class="form-radio text-purple h-5 w-5">
+                                        <span class="mt-1 text-sm text-gray-600">2 - Discordo</span>
+                                    </label>
+                                    <label class="flex flex-col items-center">
+                                        <input type="radio" name="q1" value="3" class="form-radio text-purple h-5 w-5">
+                                        <span class="mt-1 text-sm text-gray-600">3 - Neutro</span>
+                                    </label>
+                                    <label class="flex flex-col items-center">
+                                        <input type="radio" name="q1" value="4" class="form-radio text-purple h-5 w-5">
+                                        <span class="mt-1 text-sm text-gray-600">4 - Concordo</span>
+                                    </label>
+                                    <label class="flex flex-col items-center">
+                                        <input type="radio" name="q1" value="5" class="form-radio text-purple h-5 w-5">
+                                        <span class="mt-1 text-sm text-gray-600">5 - Concordo Totalmente</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <!-- Pergunta 3 -->
+                            <div class="border-b pb-4">
+                                <p class="text-lg font-semibold text-dark-gray mb-4">2. O feedback que recebo é construtivo e me ajuda a crescer.</p>
+                                <div class="flex flex-col md:flex-row justify-between text-center space-y-2 md:space-y-0">
+                                    <label class="flex flex-col items-center"><input type="radio" name="q2" value="1" class="form-radio text-purple h-5 w-5" required><span class="mt-1 text-sm text-gray-600">1</span></label>
+                                    <label class="flex flex-col items-center"><input type="radio" name="q2" value="2" class="form-radio text-purple h-5 w-5"><span class="mt-1 text-sm text-gray-600">2</span></label>
+                                    <label class="flex flex-col items-center"><input type="radio" name="q2" value="3" class="form-radio text-purple h-5 w-5"><span class="mt-1 text-sm text-gray-600">3</span></label>
+                                    <label class="flex flex-col items-center"><input type="radio" name="q2" value="4" class="form-radio text-purple h-5 w-5"><span class="mt-1 text-sm text-gray-600">4</span></label>
+                                    <label class="flex flex-col items-center"><input type="radio" name="q2" value="5" class="form-radio text-purple h-5 w-5"><span class="mt-1 text-sm text-gray-600">5</span></label>
+                                </div>
+                            </div>
+                            <!-- Pergunta 4 -->
+                            <div class="border-b pb-4">
+                                <p class="text-lg font-semibold text-dark-gray mb-4">3. Os objetivos da minha equipe são claros e realistas.</p>
+                                <div class="flex flex-col md:flex-row justify-between text-center space-y-2 md:space-y-0">
+                                    <label class="flex flex-col items-center"><input type="radio" name="q3" value="1" class="form-radio text-purple h-5 w-5" required><span class="mt-1 text-sm text-gray-600">1</span></label>
+                                    <label class="flex flex-col items-center"><input type="radio" name="q3" value="2" class="form-radio text-purple h-5 w-5"><span class="mt-1 text-sm text-gray-600">2</span></label>
+                                    <label class="flex flex-col items-center"><input type="radio" name="q3" value="3" class="form-radio text-purple h-5 w-5"><span class="mt-1 text-sm text-gray-600">3</span></label>
+                                    <label class="flex flex-col items-center"><input type="radio" name="q3" value="4" class="form-radio text-purple h-5 w-5"><span class="mt-1 text-sm text-gray-600">4</span></label>
+                                    <label class="flex flex-col items-center"><input type="radio" name="q3" value="5" class="form-radio text-purple h-5 w-5"><span class="mt-1 text-sm text-gray-600">5</span></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center mt-8">
+                            <button type="submit" class="px-8 py-4 bg-purple text-white text-lg font-bold rounded-full shadow-lg hover-scale transition-transform">Finalizar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tela Acesso Gestor - Login -->
+            <div id="gestor-login" class="screen hidden w-full container mx-auto px-4 md:px-8 transition-all duration-500 ease-in-out">
+                <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl my-8 text-center">
+                    <h2 class="text-3xl font-bold text-dark-gray mb-6">Acesso Gestor</h2>
+                    <form id="gestor-form" class="space-y-6">
+                        <input type="email" placeholder="E-mail" class="w-full px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-purple">
+                        <input type="password" placeholder="Senha" class="w-full px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-purple">
+                        <button type="submit" class="w-full px-8 py-4 bg-purple text-white text-lg font-bold rounded-full shadow-lg hover-scale transition-transform">Entrar</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tela Gestor - Serviços Disponíveis -->
+            <div id="gestor-services" class="screen hidden w-full container mx-auto px-4 md:px-8 transition-all duration-500 ease-in-out">
+                <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl my-8">
+                    <h2 class="text-3xl font-bold text-dark-gray mb-6 text-center">Serviços Disponíveis</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <button class="flex flex-col items-center p-6 bg-gray-50 rounded-2xl shadow-md hover-scale transition-transform" onclick="showScreen('analise-questionarios')">
+                            <span class="text-4xl mb-2">📊</span>
+                            <span class="font-semibold text-lg text-dark-gray">Análise dos Questionários</span>
+                        </button>
+                        <button class="flex flex-col items-center p-6 bg-gray-50 rounded-2xl shadow-md hover-scale transition-transform" onclick="showScreen('plano-acao')">
+                            <span class="text-4xl mb-2">📝</span>
+                            <span class="font-semibold text-lg text-dark-gray">Plano de Ação</span>
+                        </button>
+                        <button class="flex flex-col items-center p-6 bg-gray-50 rounded-2xl shadow-md hover-scale transition-transform" onclick="showScreen('treinamentos')">
+                            <span class="text-4xl mb-2">🧠</span>
+                            <span class="font-semibold text-lg text-dark-gray">Treinamentos</span>
+                        </button>
+                        <button class="flex flex-col items-center p-6 bg-gray-50 rounded-2xl shadow-md hover-scale transition-transform" onclick="showScreen('videos-capacitacao')">
+                            <span class="text-4xl mb-2">📹</span>
+                            <span class="font-semibold text-lg text-dark-gray">Vídeos de Capacitação</span>
+                        </button>
+                        <button class="flex flex-col items-center p-6 bg-gray-50 rounded-2xl shadow-md hover-scale transition-transform" onclick="showScreen('pdi')">
+                            <span class="text-4xl mb-2">🚀</span>
+                            <span class="font-semibold text-lg text-dark-gray">PDI</span>
+                        </button>
+                        <button class="flex flex-col items-center p-6 bg-gray-50 rounded-2xl shadow-md hover-scale transition-transform" onclick="showScreen('diagnostico-clima')">
+                            <span class="text-4xl mb-2">📈</span>
+                            <span class="font-semibold text-lg text-dark-gray">Diagnóstico de Clima</span>
+                        </button>
+                        <button class="flex flex-col items-center p-6 bg-gray-50 rounded-2xl shadow-md hover-scale transition-transform" onclick="showScreen('nr-saude-mental')">
+                            <span class="text-4xl mb-2">❤️</span>
+                            <span class="font-semibold text-lg text-dark-gray">NR-1 Saúde Mental</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tela Análise dos Questionários -->
+            <div id="analise-questionarios" class="screen hidden w-full container mx-auto px-4 md:px-8 transition-all duration-500 ease-in-out">
+                <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl my-8">
+                    <h2 class="text-3xl font-bold text-dark-gray mb-6 text-center">Análise dos Questionários</h2>
+                    <p class="text-lg text-gray-600 mb-8 text-center">Principais apontamentos sobre equipe, gestão e problemas detectados.</p>
+                    <div class="space-y-8">
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-4">Pontos de Destaque</h3>
+                            <canvas id="satisfactionChart"></canvas>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-4">Resumo dos Resultados</h3>
+                            <p class="text-gray-600">
+                                A análise do questionário revela um ponto crítico de melhoria em **"Desenvolvimento Profissional"**, com uma pontuação média mais baixa. A percepção sobre o **"Ambiente de Trabalho"** e a **"Comunicação Interna"** são fortes, indicando uma base sólida para a cultura da empresa.
+                            </p>
+                            <p class="text-gray-600 mt-4">
+                                A gestão deve focar em criar mais oportunidades de crescimento e aprendizado, como sugerido no Plano de Ação, para fortalecer o engajamento e a satisfação dos colaboradores.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tela Plano de Ação -->
+            <div id="plano-acao" class="screen hidden w-full container mx-auto px-4 md:px-8 transition-all duration-500 ease-in-out">
+                <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl my-8">
+                    <h2 class="text-3xl font-bold text-dark-gray mb-6 text-center">Plano de Ação</h2>
+                    <p class="text-lg text-gray-600 mb-8 text-center">Soluções práticas para cada situação identificada.</p>
+                    <div class="space-y-8">
+                        <div>
+                            <h3 class="text-2xl font-semibold text-dark-gray mb-4">Problema Identificado</h3>
+                            <p class="text-gray-600">
+                                **Desenvolvimento Profissional:** Os colaboradores percebem uma falta de oportunidades claras para crescimento de carreira e aprimoramento de habilidades.
+                            </p>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-semibold text-dark-gray mb-4">Ações Propostas</h3>
+                            <ul class="list-disc list-inside space-y-2 text-gray-600">
+                                <li>Criar um programa de mentoria interna, conectando colaboradores juniores a líderes experientes.</li>
+                                <li>Oferecer workshops mensais sobre habilidades técnicas e interpessoais.</li>
+                                <li>Disponibilizar um orçamento anual para cursos e certificações externas.</li>
+                                <li>Estabelecer e comunicar claramente os planos de carreira para cada função.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-semibold text-dark-gray mb-4">Métricas de Sucesso</h3>
+                            <ul class="list-disc list-inside space-y-2 text-gray-600">
+                                <li>Aumento de 20% na pontuação do tópico "Desenvolvimento Profissional" no próximo questionário.</li>
+                                <li>Pelo menos 50% dos colaboradores participando de pelo menos um workshop por trimestre.</li>
+                                <li>Aumento de 15% na retenção de talentos em cargos-chave.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tela Treinamentos -->
+            <div id="treinamentos" class="screen hidden w-full container mx-auto px-4 md:px-8 transition-all duration-500 ease-in-out">
+                <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl my-8">
+                    <h2 class="text-3xl font-bold text-dark-gray mb-6 text-center">Treinamentos</h2>
+                    <p class="text-lg text-gray-600 mb-8 text-center">Recursos lúdicos para demonstrar ações e diálogos.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="p-6 bg-gray-50 rounded-2xl shadow-md text-center">
+                            <span class="text-4xl mb-2">🎭</span>
+                            <h3 class="font-semibold text-lg text-dark-gray mt-2">Simulação de Diálogos</h3>
+                            <p class="text-gray-500 text-sm mt-1">Pratique conversas difíceis em um ambiente seguro.</p>
+                        </div>
+                        <div class="p-6 bg-gray-50 rounded-2xl shadow-md text-center">
+                            <span class="text-4xl mb-2">🧩</span>
+                            <h3 class="font-semibold text-lg text-dark-gray mt-2">Jogos Interativos</h3>
+                            <p class="text-gray-500 text-sm mt-1">Aprenda sobre liderança e trabalho em equipe de forma divertida.</p>
+                        </div>
+                        <div class="p-6 bg-gray-50 rounded-2xl shadow-md text-center">
+                            <span class="text-4xl mb-2">🔮</span>
+                            <h3 class="font-semibold text-lg text-dark-gray mt-2">Estudos de Caso</h3>
+                            <p class="text-gray-500 text-sm mt-1">Resolva problemas reais em cenários fictícios.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tela Vídeos de Capacitação -->
+            <div id="videos-capacitacao" class="screen hidden w-full container mx-auto px-4 md:px-8 transition-all duration-500 ease-in-out">
+                <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl my-8">
+                    <h2 class="text-3xl font-bold text-dark-gray mb-6 text-center">Vídeos de Capacitação</h2>
+                    <p class="text-lg text-gray-600 mb-8 text-center">Exemplos práticos do dia a dia e resolução de dúvidas de gestão.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="p-4 bg-gray-50 rounded-2xl shadow-md text-center">
+                            <img src="https://placehold.co/400x225/40e0d0/FFFFFF?text=Lideran%C3%A7a+Inclusiva" alt="Liderança Inclusiva" class="rounded-lg mb-4 w-full">
+                            <h3 class="font-semibold text-lg text-dark-gray">Liderança Inclusiva</h3>
+                            <p class="text-gray-500 text-sm">Como promover um ambiente de respeito e diversidade.</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-2xl shadow-md text-center">
+                            <img src="https://placehold.co/400x225/800080/FFFFFF?text=Gerenciamento+de+Conflitos" alt="Gerenciamento de Conflitos" class="rounded-lg mb-4 w-full">
+                            <h3 class="font-semibold text-lg text-dark-gray">Gerenciamento de Conflitos</h3>
+                            <p class="text-gray-500 text-sm">Estratégias para resolver desentendimentos na equipe.</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-2xl shadow-md text-center">
+                            <img src="https://placehold.co/400x225/333333/FFFFFF?text=Feedback+Efetivo" alt="Feedback Efetivo" class="rounded-lg mb-4 w-full">
+                            <h3 class="font-semibold text-lg text-dark-gray">Feedback Efetivo</h3>
+                            <p class="text-gray-500 text-sm">Técnicas para dar e receber feedback de maneira construtiva.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tela PDI -->
+            <div id="pdi" class="screen hidden w-full container mx-auto px-4 md:px-8 transition-all duration-500 ease-in-out">
+                <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl my-8">
+                    <h2 class="text-3xl font-bold text-dark-gray mb-6 text-center">PDI (Plano de Desenvolvimento Individual)</h2>
+                    <p class="text-lg text-gray-600 mb-8 text-center">Sugestões práticas para melhoria de comportamentos e fortalecimento da liderança.</p>
+                    <div class="space-y-8">
+                        <div>
+                            <h3 class="text-2xl font-semibold text-dark-gray mb-4">Como Criar seu PDI</h3>
+                            <ul class="list-disc list-inside space-y-2 text-gray-600">
+                                <li>**Defina objetivos claros:** O que você quer alcançar? Por exemplo: "Melhorar a habilidade de comunicação".</li>
+                                <li>**Identifique as competências necessárias:** Quais habilidades são essenciais para atingir seu objetivo?</li>
+                                <li>**Crie um plano de ação:** Liste as atividades que você irá realizar, como "participar de um workshop de oratória" ou "pedir feedback semanalmente".</li>
+                                <li>**Estabeleça prazos:** Defina datas realistas para cada atividade e para o objetivo final.</li>
+                                <li>**Monitore o progresso:** Revise seu PDI regularmente para ajustar o plano conforme necessário.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-semibold text-dark-gray mb-4">Exemplo de PDI</h3>
+                            <div class="p-6 bg-gray-50 rounded-lg">
+                                <h4 class="font-bold text-lg mb-2">Objetivo: Fortalecer a Habilidade de Liderança</h4>
+                                <p class="text-gray-600 mb-2">**Atividade:** Fazer o curso online "Liderança na Prática" da Mentori.</p>
+                                <p class="text-gray-600 mb-2">**Prazo:** Finalizar em 3 meses.</p>
+                                <p class="text-gray-600">**Resultado Esperado:** Assumir a liderança em um projeto de pequena escala.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tela Diagnóstico de Clima -->
+            <div id="diagnostico-clima" class="screen hidden w-full container mx-auto px-4 md:px-8 transition-all duration-500 ease-in-out">
+                <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl my-8">
+                    <h2 class="text-3xl font-bold text-dark-gray mb-6 text-center">Diagnóstico de Clima</h2>
+                    <p class="text-lg text-gray-600 mb-8 text-center">Análise do clima organizacional e comparativo ao longo do tempo.</p>
+                    <div class="space-y-8">
+                        <div class="text-center">
+                            <h3 class="text-2xl font-semibold mb-4">Clima Atual (Pontuação)</h3>
+                            <div class="text-6xl font-bold text-turquoise">8.5/10</div>
+                            <p class="text-lg text-gray-600">O clima organizacional atual é majoritariamente positivo.</p>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-4">Comparativo Histórico</h3>
+                            <canvas id="climaChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tela NR-1 Saúde Mental -->
+            <div id="nr-saude-mental" class="screen hidden w-full container mx-auto px-4 md:px-8 transition-all duration-500 ease-in-out">
+                <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl my-8">
+                    <h2 class="text-3xl font-bold text-dark-gray mb-6 text-center">NR-1 Saúde Mental</h2>
+                    <p class="text-lg text-gray-600 mb-8 text-center">Suporte à empresa no cumprimento das responsabilidades de saúde mental do PGR.</p>
+                    <div class="space-y-8">
+                        <div>
+                            <h3 class="text-2xl font-semibold text-dark-gray mb-4">Nossa Abordagem</h3>
+                            <ul class="list-disc list-inside space-y-2 text-gray-600">
+                                <li>**Diagnóstico:** Avaliação completa dos riscos psicossociais no ambiente de trabalho.</li>
+                                <li>**Prevenção:** Implementação de programas de bem-estar e gestão de estresse.</li>
+                                <li>**Acompanhamento:** Ferramentas para monitorar o clima e identificar sinais de alerta.</li>
+                                <li>**Capacitação:** Treinamentos para líderes sobre como abordar e apoiar a saúde mental da equipe.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-semibold text-dark-gray mb-4">Recursos Disponíveis</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="p-6 bg-gray-50 rounded-lg shadow-md">
+                                    <h4 class="font-semibold text-lg text-dark-gray mb-1">Webinars sobre Bem-estar</h4>
+                                    <p class="text-sm text-gray-600">Sessões ao vivo com especialistas em saúde mental.</p>
+                                </div>
+                                <div class="p-6 bg-gray-50 rounded-lg shadow-md">
+                                    <h4 class="font-semibold text-lg text-dark-gray mb-1">Materiais Informativos</h4>
+                                    <p class="text-sm text-gray-600">Guias e artigos sobre gestão da ansiedade e do estresse.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tela Chat -->
+            <div id="chat" class="screen hidden w-full container mx-auto px-4 md:px-8 transition-all duration-500 ease-in-out">
+                <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl my-8 flex flex-col h-[calc(100vh-100px)]">
+                    <div class="flex-1 chat-container" id="chat-messages">
+                        <!-- Mensagens do chat serão adicionadas aqui -->
+                        <div class="chat-message message-bot">Olá! Bem-vindo ao chat de suporte da Mentori. Como posso ajudar?</div>
+                    </div>
+                    <form id="chat-form" class="mt-4 flex space-x-2">
+                        <input type="text" id="chat-input" placeholder="Digite sua mensagem..." class="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-purple">
+                        <button type="submit" class="px-6 py-2 bg-purple text-white rounded-full font-bold">Enviar</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tela E-mail -->
+            <div id="email" class="screen hidden w-full container mx-auto px-4 md:px-8 transition-all duration-500 ease-in-out">
+                <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl my-8 flex flex-col items-center text-center">
+                    <div class="text-purple mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-3xl font-bold text-dark-gray mb-4">Entre em Contato Conosco</h2>
+                    <p class="text-lg text-gray-600 mb-6">Envie suas dúvidas, sugestões ou solicitações para:</p>
+                    <a href="mailto:contato@mentori.com.br" class="text-lg font-bold text-turquoise hover:underline">contato@mentori.com.br</a>
+                </div>
+            </div>
+
+            <!-- Tela Trocar de Plano -->
+            <div id="change-plan" class="screen hidden w-full container mx-auto px-4 md:px-8 transition-all duration-500 ease-in-out">
+                <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl my-8 text-center">
+                    <h2 class="text-3xl font-bold text-dark-gray mb-8">Trocar de Plano</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <!-- Plano Atual -->
+                        <div class="bg-gray-50 p-6 rounded-2xl shadow-md border-2 border-purple">
+                            <span class="text-sm font-bold text-purple mb-2 block">PLANO ATUAL</span>
+                            <h3 class="text-2xl font-bold mb-2">Plano Básico</h3>
+                            <p class="text-gray-500 mb-4">Ideal para pequenas equipes.</p>
+                            <p class="text-4xl font-extrabold mb-4">R$ 99<span class="text-xl font-normal">/mês</span></p>
+                            <ul class="text-left text-sm text-gray-600 space-y-2">
+                                <li>✔️ Análise de Questionários</li>
+                                <li>✔️ Plano de Ação</li>
+                                <li>✔️ Acesso ao Chat</li>
+                                <li>❌ Treinamentos</li>
+                            </ul>
+                        </div>
+                        <!-- Plano Standard -->
+                        <div class="bg-white p-6 rounded-2xl shadow-lg">
+                            <h3 class="text-2xl font-bold mb-2">Plano Standard</h3>
+                            <p class="text-gray-500 mb-4">Para equipes em crescimento.</p>
+                            <p class="text-4xl font-extrabold mb-4">R$ 199<span class="text-xl font-normal">/mês</span></p>
+                            <ul class="text-left text-sm text-gray-600 space-y-2">
+                                <li>✔️ Análise de Questionários</li>
+                                <li>✔️ Plano de Ação</li>
+                                <li>✔️ Acesso ao Chat</li>
+                                <li>✔️ Treinamentos</li>
+                                <li>✔️ Vídeos de Capacitação</li>
+                            </ul>
+                        </div>
+                        <!-- Plano Premium -->
+                        <div class="bg-white p-6 rounded-2xl shadow-lg">
+                            <h3 class="text-2xl font-bold mb-2">Plano Premium</h3>
+                            <p class="text-gray-500 mb-4">Solução completa para grandes empresas.</p>
+                            <p class="text-4xl font-extrabold mb-4">R$ 499<span class="text-xl font-normal">/mês</span></p>
+                            <ul class="text-left text-sm text-gray-600 space-y-2">
+                                <li>✔️ Todos os recursos Standard</li>
+                                <li>✔️ Diagnóstico de Clima</li>
+                                <li>✔️ Suporte Humano Personalizado</li>
+                                <li>✔️ NR-1 Saúde Mental</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tela Financeiro -->
+            <div id="finance" class="screen hidden w-full container mx-auto px-4 md:px-8 transition-all duration-500 ease-in-out">
+                <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl my-8">
+                    <h2 class="text-3xl font-bold text-dark-gray mb-6 text-center">Financeiro</h2>
+                    <div class="space-y-8">
+                        <div class="p-6 bg-gray-50 rounded-2xl shadow-md text-center">
+                            <h3 class="text-2xl font-semibold mb-2">Resumo da Conta</h3>
+                            <p class="text-sm text-gray-600">Seu plano atual é o **Plano Básico**.</p>
+                            <p class="text-lg font-bold text-purple mt-2">Valor Mensal: R$ 99,00</p>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-4">Faturas</h3>
+                            <div class="bg-gray-50 p-6 rounded-2xl shadow-md">
+                                <h4 class="font-bold text-lg mb-2">Faturas Pendentes:</h4>
+                                <p class="text-gray-600">Nenhuma fatura pendente. Tudo certo!</p>
+                            </div>
+                            <div class="bg-gray-50 p-6 rounded-2xl shadow-md mt-4">
+                                <h4 class="font-bold text-lg mb-2">Histórico de Faturas Pagas:</h4>
+                                <table class="w-full text-left table-auto mt-4">
+                                    <thead>
+                                        <tr class="text-gray-600 border-b border-gray-300">
+                                            <th class="py-2">Data</th>
+                                            <th class="py-2">Fatura</th>
+                                            <th class="py-2 text-right">Valor</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="border-b border-gray-200">
+                                            <td class="py-2">15/06/2024</td>
+                                            <td class="py-2">#001001-2024</td>
+                                            <td class="py-2 text-right">R$ 99,00</td>
+                                        </tr>
+                                        <tr class="border-b border-gray-200">
+                                            <td class="py-2">15/05/2024</td>
+                                            <td class="py-2">#001000-2024</td>
+                                            <td class="py-2 text-right">R$ 99,00</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-2">15/04/2024</td>
+                                            <td class="py-2">#000999-2024</td>
+                                            <td class="py-2 text-right">R$ 99,00</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tela Agendar Treinamento -->
+            <div id="schedule-training" class="screen hidden w-full container mx-auto px-4 md:px-8 transition-all duration-500 ease-in-out">
+                <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl my-8">
+                    <h2 class="text-3xl font-bold text-dark-gray mb-6 text-center">Agendar Treinamento</h2>
+                    <p class="text-lg text-gray-600 mb-8 text-center">Suporte humano personalizado para sua equipe.</p>
+                    <form id="schedule-form" class="space-y-6">
+                        <input type="text" placeholder="Nome da Empresa" class="w-full px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-purple" required>
+                        <input type="text" placeholder="Seu Nome" class="w-full px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-purple" required>
+                        <input type="email" placeholder="Seu E-mail" class="w-full px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-purple" required>
+                        <input type="date" class="w-full px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-purple" required>
+                        <select class="w-full px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-purple" required>
+                            <option value="">Selecione o tipo de treinamento...</option>
+                            <option value="lideranca">Liderança e Gestão</option>
+                            <option value="comunicacao">Comunicação e Feedback</option>
+                            <option value="saude-mental">Saúde Mental no Trabalho</option>
+                        </select>
+                        <textarea placeholder="Mensagem adicional (opcional)" rows="4" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple"></textarea>
+                        <button type="submit" class="w-full px-8 py-4 bg-purple text-white text-lg font-bold rounded-full shadow-lg hover-scale transition-transform">Agendar</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tela Política de Privacidade -->
+            <div id="privacy-policy" class="screen hidden w-full container mx-auto px-4 md:px-8 transition-all duration-500 ease-in-out">
+                <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl my-8">
+                    <h2 class="text-3xl font-bold text-dark-gray mb-6 text-center">Política de Privacidade</h2>
+                    <div class="space-y-6 text-lg text-gray-600">
+                        <p>
+                            A Mentori está comprometida em proteger a sua privacidade. Esta política descreve como coletamos, usamos e protegemos as suas informações pessoais e os dados da sua empresa.
+                        </p>
+                        <h3 class="text-2xl font-semibold text-dark-gray mt-6 mb-2">Coleta de Dados</h3>
+                        <p>
+                            Coletamos apenas os dados essenciais para fornecer nossos serviços. Para colaboradores, o questionário é completamente anônimo e as respostas são agregadas por setor, sem qualquer identificação por nome. Para gestores, coletamos informações de contato para acesso e personalização dos serviços.
+                        </p>
+                        <h3 class="text-2xl font-semibold text-dark-gray mt-6 mb-2">Uso dos Dados</h3>
+                        <p>
+                            Os dados coletados são usados para gerar análises e relatórios de clima organizacional, que ajudam a sua empresa a tomar decisões estratégicas. As informações de contato do gestor são utilizadas para gerenciamento de conta, faturamento e comunicação sobre os serviços contratados.
+                        </p>
+                        <h3 class="text-2xl font-semibold text-dark-gray mt-6 mb-2">Segurança da Informação</h3>
+                        <p>
+                            Implementamos medidas de segurança robustas para proteger seus dados contra acesso não autorizado, alteração ou destruição. Todas as informações são armazenadas em servidores seguros e criptografadas.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação -->
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content">
+            <h3 class="text-2xl font-bold text-dark-gray mb-4">Questionário Finalizado!</h3>
+            <p class="text-lg text-gray-600">Obrigado por sua colaboração. Suas respostas foram enviadas anonimamente.</p>
+            <button class="mt-6 px-6 py-3 bg-purple text-white rounded-full font-bold hover:bg-turquoise transition-colors" onclick="closeModal()">OK</button>
+        </div>
+    </div>
+
+    <script>
+        const screens = document.querySelectorAll('.screen');
+        const backButton = document.getElementById('back-button');
+        const gestorForm = document.getElementById('gestor-form');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatMessages = document.getElementById('chat-messages');
+        const menuButton = document.getElementById('menu-button');
+        const sideMenu = document.getElementById('side-menu');
+        const closeMenuButton = document.getElementById('close-menu');
+        const scheduleForm = document.getElementById('schedule-form');
+
+        let screenHistory = ['home'];
+
+        function showScreen(screenId) {
+            screens.forEach(screen => {
+                screen.classList.add('hidden');
+            });
+            const currentScreen = document.getElementById(screenId);
+            if (currentScreen) {
+                currentScreen.classList.remove('hidden');
+                screenHistory.push(screenId);
+                updateBackButtonVisibility();
+            }
+        }
+
+        function goBack() {
+            if (screenHistory.length > 1) {
+                screenHistory.pop();
+                const previousScreenId = screenHistory[screenHistory.length - 1];
+                showScreen(previousScreenId);
+                // Remove the extra entry created by showScreen
+                screenHistory.pop();
+            }
+        }
+
+        function updateBackButtonVisibility() {
+            if (screenHistory.length > 1) {
+                backButton.classList.remove('hidden');
+            } else {
+                backButton.classList.add('hidden');
+            }
+        }
+
+        function toggleMenu() {
+            sideMenu.classList.toggle('translate-x-full');
+            if (sideMenu.classList.contains('translate-x-full')) {
+                menuButton.style.transform = 'rotate(0deg)';
+            } else {
+                menuButton.style.transform = 'rotate(90deg)';
+            }
+        }
+
+        closeMenuButton.addEventListener('click', () => {
+            toggleMenu();
+        });
+
+        gestorForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            this.style.display = 'none'; // Esconde o formulário
+            showScreen('gestor-services');
+        });
+        
+        // Modal logic
+        const modal = document.getElementById('confirmation-modal');
+        const surveyForm = document.getElementById('survey-form');
+        
+        surveyForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            modal.style.display = 'flex';
+        });
+
+        function closeModal() {
+            modal.style.display = 'none';
+            // Opcional: voltar para a tela inicial
+            showScreen('home');
+        }
+
+        function startSurvey() {
+            showScreen('survey');
+        }
+
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const message = chatInput.value.trim();
+            if (message) {
+                // Adiciona a mensagem do usuário
+                const userMessageDiv = document.createElement('div');
+                userMessageDiv.classList.add('chat-message', 'message-user');
+                userMessageDiv.textContent = message;
+                chatMessages.appendChild(userMessageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
+
+                // Simula uma resposta da Mentori
+                setTimeout(() => {
+                    const botMessageDiv = document.createElement('div');
+                    botMessageDiv.classList.add('chat-message', 'message-bot');
+                    botMessageDiv.textContent = "Agradeço seu contato. Como posso ajudar com essa questão?";
+                    chatMessages.appendChild(botMessageDiv);
+                    chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
+                }, 1000);
+
+                chatInput.value = '';
+            }
+        });
+
+        // Gráfico de Barras para Análise dos Questionários
+        function renderChart() {
+            const ctx = document.getElementById('satisfactionChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Comunicação Interna', 'Ambiente de Trabalho', 'Desenvolvimento Profissional', 'Gestão'],
+                    datasets: [{
+                        label: 'Pontuação Média',
+                        data: [4.2, 4.5, 3.1, 3.8],
+                        backgroundColor: [
+                            'rgba(64, 224, 208, 0.7)',
+                            'rgba(64, 224, 208, 0.7)',
+                            'rgba(128, 0, 128, 0.7)',
+                            'rgba(128, 0, 128, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(64, 224, 208, 1)',
+                            'rgba(64, 224, 208, 1)',
+                            'rgba(128, 0, 128, 1)',
+                            'rgba(128, 0, 128, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 5
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de Linha para Diagnóstico de Clima
+            const climaCtx = document.getElementById('climaChart').getContext('2d');
+            new Chart(climaCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+                    datasets: [{
+                        label: 'Pontuação de Clima Organizacional',
+                        data: [7.5, 7.8, 8.0, 8.2, 8.5, 8.5],
+                        borderColor: 'rgba(64, 224, 208, 1)',
+                        backgroundColor: 'rgba(64, 224, 208, 0.2)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 10
+                        }
+                    }
+                }
+            });
+        }
+
+        // Adiciona um listener para renderizar o gráfico quando a tela for exibida
+        document.getElementById('analise-questionarios').addEventListener('transitionend', (event) => {
+            if (!document.getElementById('analise-questionarios').classList.contains('hidden')) {
+                renderChart();
+            }
+        });
+
+        document.getElementById('diagnostico-clima').addEventListener('transitionend', (event) => {
+            if (!document.getElementById('diagnostico-clima').classList.contains('hidden')) {
+                renderChart();
+            }
+        });
+
+        scheduleForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert("Treinamento agendado com sucesso! Entraremos em contato em breve.");
+        });
+
+        // Inicializa a tela
+        showScreen('home');
+    </script>
+
+</body>
+</html>
